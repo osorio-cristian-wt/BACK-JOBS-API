@@ -62,6 +62,10 @@ public class UserApiRepository {
     }
 
     public User getUserById(int id) {
+        return getUsers(1).getData().stream().filter(user -> id == user.getId()).findFirst().orElse(null);
+    }
+/*
+    public User getUserById(int id) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(baseUrl + "/" + id))
@@ -84,7 +88,7 @@ public class UserApiRepository {
             throw new RuntimeException("Error al conectar con la API de usuarios: " + e.getMessage(), e);
         }
     }
-
+*/
     public void updateUser(User user) {
         try {
             Map<String, String> userMap = new HashMap<>();
