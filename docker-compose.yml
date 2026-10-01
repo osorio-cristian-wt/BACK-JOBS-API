@@ -1,6 +1,8 @@
 # Uso rápido:
 #   docker compose run --rm tests     -> compila y corre todos los tests (reportes en ./target/surefire-reports)
 #   docker compose up -d api          -> levanta la API en http://localhost:8080 (GraphiQL en /graphiql)
+#   docker compose run --rm e2e       -> levanta la API y corre los tests E2E de /api/assign (Newman)
+#                                        reporte HTML en ./target/e2e/assign-e2e.html
 #   docker compose down               -> baja todo
 name: back-jobs-api
 
@@ -24,6 +26,29 @@ services:
       - m2-cache:/root/.m2
     command: ["mvn", "-B", "test"]
     profiles: ["tests"]
+
+  # Tests E2E (Postman/Newman) contra la API real levantada en el servicio "api".
+  # Usa la API externa real de usuarios (ReqRes): requiere internet.
+  e2e:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - ./src/test/resources/postman:/app/postman:ro
+      - ./target/e2e:/app/reportes
+    depends_on:
+      api:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - >-
+        npx -y -p newman@6 -p newman-reporter-htmlextra newman run postman/assign.postman_collection.json
+        -e postman/local.postman_environment.json
+        --env-var baseUrl=http://api:8080
+        -r cli,htmlextra,junit
+        --reporter-htmlextra-export reportes/assign-e2e.html
+        --reporter-junit-export reportes/assign-e2e.xml
+    profiles: ["e2e"]
 
   # Shell con Java 21 + Maven para compilar/ejecutar cualquier comando:
   #   docker compose run --rm dev mvn -B package

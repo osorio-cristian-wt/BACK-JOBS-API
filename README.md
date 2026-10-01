@@ -6,13 +6,16 @@ API de trabajos (Spring Boot 4, Java 21) — Programación IV, UAP.
 
 | Qué | Comando |
 |---|---|
-| Correr todos los tests | `docker compose run --rm tests` |
+| Correr unitarios + integración | `docker compose run --rm tests` |
+| Correr E2E de `/api/assign` (Newman) | `docker compose run --rm e2e` |
 | Levantar la API (http://localhost:8080) | `docker compose up -d --build api` |
 | GraphiQL | http://localhost:8080/graphiql |
 | Shell con Java 21 + Maven | `docker compose run --rm dev` |
 | Bajar todo | `docker compose down` |
 
-Los reportes de tests quedan en `target/surefire-reports/`.
+Reportes: `target/surefire-reports/` (JUnit), `target/site/jacoco/index.html` (cobertura), `target/e2e/assign-e2e.html` (E2E).
+
+**Estrategia y detalle de los tests: [TESTING.md](TESTING.md).**
 
 ## Sin PC: GitHub Codespaces
 
@@ -22,4 +25,4 @@ Los reportes de tests quedan en `target/surefire-reports/`.
 
 ## CI
 
-Cada push a `main` corre los tests en GitHub Actions (`.github/workflows/tests.yml`) y publica los reportes como artifact.
+Cada push a `main` corre unitarios + integración y luego el E2E en GitHub Actions (`.github/workflows/tests.yml`) y publica los reportes como artifacts.

@@ -19,14 +19,33 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: surefire-reports
-          path: target/surefire-reports/
+          name: reportes-tests
+          path: |
+            target/surefire-reports/
+            target/site/jacoco/
           if-no-files-found: warn
 
-  docker-image:
+  e2e:
     runs-on: ubuntu-latest
     needs: test
     steps:
       - uses: actions/checkout@v4
-      - name: Construir imagen de la API
-        run: docker build --target runtime -t back-jobs-api:ci .
+
+      - name: Levantar la API y correr E2E de /api/assign (Newman)
+        run: docker compose run --rm e2e
+
+      - name: Publicar reporte E2E
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-assign
+          path: target/e2e/
+          if-no-files-found: warn
+
+      - name: Logs de la API si falló
+        if: failure()
+        run: docker compose logs api
+
+      - name: Bajar contenedores
+        if: always()
+        run: docker compose down
