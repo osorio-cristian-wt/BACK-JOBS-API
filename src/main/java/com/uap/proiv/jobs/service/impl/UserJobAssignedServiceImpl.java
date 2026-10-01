@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class UserJobAssignedServiceImpl implements UserJobAssignedService {
@@ -34,7 +35,7 @@ public class UserJobAssignedServiceImpl implements UserJobAssignedService {
                 users.addAll(userApiResponse.getData());
             }
         }
-        List<AssignedResponse> assigned = assignedService.create(jobs, users.stream().map(User::getId).toList());
+        List<AssignedResponse> assigned = assignedService.create(jobs, users.stream().map(User::getId).collect(Collectors.toList()));
 
         return jobs.stream().map(job -> {
            List<User> usersJob = assigned.stream().filter(a -> a.jobId() == job.getId())

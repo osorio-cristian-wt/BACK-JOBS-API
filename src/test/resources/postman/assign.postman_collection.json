@@ -1,0 +1,412 @@
+{
+  "info": {
+    "_postman_id": "b9dad0c0-ddc0-527a-b48d-e5c4893858c5",
+    "name": "BACK-JOBS-API - E2E /api/assign",
+    "description": "Tests end-to-end del endpoint POST /api/assign contra la API levantada (sin mocks).\nCorrer con Postman o con Newman: npx newman run assign.postman_collection.json -e local.postman_environment.json",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Catálogo de trabajos (GET /api/job/all)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"El catálogo es una lista no vacía de trabajos\", function () {",
+              "    const jobs = pm.response.json();",
+              "    pm.expect(jobs).to.be.an(\"array\").that.is.not.empty;",
+              "    jobs.forEach((job) => {",
+              "        pm.expect(job.id).to.be.a(\"number\");",
+              "        pm.expect(job.name).to.be.a(\"string\");",
+              "        pm.expect(job.resources).to.be.a(\"number\").and.to.be.above(0);",
+              "    });",
+              "    // se guarda para comparar con la respuesta de /api/assign",
+              "    pm.collectionVariables.set(\"catalogo\", JSON.stringify(jobs));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/job/all",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "job",
+            "all"
+          ]
+        },
+        "description": "Obtiene el catálogo real de trabajos para validar luego la asignación contra él."
+      }
+    },
+    {
+      "name": "02 - Asignar: pedido válido (POST /api/assign)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// número de pedido aleatorio para verificar que la API lo devuelve tal cual",
+              "pm.collectionVariables.set(\"requestNumber\", Math.floor(Math.random() * 90000) + 10000);",
+              "pm.collectionVariables.set(\"clientName\", \"Cliente E2E UAP\");"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "const catalogo = JSON.parse(pm.collectionVariables.get(\"catalogo\") || \"[]\");",
+              "",
+              "pm.test(\"Estado 200 OK y respuesta JSON\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    pm.response.to.have.header(\"Content-Type\");",
+              "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+              "});",
+              "",
+              "pm.test(\"Tiempo de respuesta menor a 10 segundos\", function () {",
+              "    pm.expect(pm.response.responseTime).to.be.below(10000);",
+              "});",
+              "",
+              "pm.test(\"Devuelve el cliente y el número de pedido enviados\", function () {",
+              "    pm.expect(json.Client).to.eql(pm.collectionVariables.get(\"clientName\"));",
+              "    pm.expect(json.Request_Number).to.eql(Number(pm.collectionVariables.get(\"requestNumber\")));",
+              "});",
+              "",
+              "pm.test(\"Hay una asignación por cada trabajo del catálogo, en el mismo orden\", function () {",
+              "    pm.expect(json.Assign).to.be.an(\"array\");",
+              "    pm.expect(json.Assign.length).to.eql(catalogo.length);",
+              "    json.Assign.forEach((asignacion, i) => {",
+              "        pm.expect(asignacion.job.id, \"id del trabajo en la posición \" + i).to.eql(catalogo[i].id);",
+              "        pm.expect(asignacion.job.name).to.eql(catalogo[i].name);",
+              "    });",
+              "});",
+              "",
+              "pm.test(\"Cada trabajo recibe exactamente 'resources' usuarios\", function () {",
+              "    json.Assign.forEach((asignacion) => {",
+              "        pm.expect(asignacion.users, asignacion.job.name).to.be.an(\"array\");",
+              "        pm.expect(asignacion.users.length, asignacion.job.name).to.eql(asignacion.job.resources);",
+              "    });",
+              "});",
+              "",
+              "pm.test(\"No se repite un usuario dentro del mismo trabajo\", function () {",
+              "    json.Assign.forEach((asignacion) => {",
+              "        const ids = asignacion.users.map((u) => u.id);",
+              "        pm.expect(new Set(ids).size, asignacion.job.name).to.eql(ids.length);",
+              "    });",
+              "});",
+              "",
+              "pm.test(\"Los usuarios asignados tienen el formato de la API de usuarios\", function () {",
+              "    json.Assign.forEach((asignacion) => {",
+              "        asignacion.users.forEach((user) => {",
+              "            pm.expect(user.id).to.be.a(\"number\").and.to.be.above(0);",
+              "            pm.expect(user.email).to.be.a(\"string\").and.to.include(\"@\");",
+              "            pm.expect(user.first_name).to.be.a(\"string\").and.not.be.empty;",
+              "            pm.expect(user.last_name).to.be.a(\"string\").and.not.be.empty;",
+              "            pm.expect(user.avatar).to.be.a(\"string\");",
+              "        });",
+              "    });",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/assign",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "assign"
+          ]
+        },
+        "description": "Flujo completo: API -> servicios -> jobs.json + API externa de usuarios (ReqRes) -> respuesta.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requestNumber\": {{requestNumber}},\n  \"clientName\": \"{{clientName}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "03 - Asignar: sin clientName -> 400",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado 400 Bad Request\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Respuesta de error estándar de Spring Boot\", function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql(400);",
+              "    pm.expect(json.error).to.eql(\"Bad Request\");",
+              "    pm.expect(json.path).to.eql(\"/api/assign\");",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/assign",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "assign"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requestNumber\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "04 - Asignar: clientName vacío -> 400",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado 400 Bad Request\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Respuesta de error estándar de Spring Boot\", function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql(400);",
+              "    pm.expect(json.error).to.eql(\"Bad Request\");",
+              "    pm.expect(json.path).to.eql(\"/api/assign\");",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/assign",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "assign"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requestNumber\": 1,\n  \"clientName\": \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "05 - Asignar: sin requestNumber -> 400",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado 400 Bad Request\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Respuesta de error estándar de Spring Boot\", function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql(400);",
+              "    pm.expect(json.error).to.eql(\"Bad Request\");",
+              "    pm.expect(json.path).to.eql(\"/api/assign\");",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/assign",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "assign"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clientName\": \"Cliente E2E UAP\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "06 - Asignar: JSON inválido -> 400",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado 400 Bad Request\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Respuesta de error estándar de Spring Boot\", function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql(400);",
+              "    pm.expect(json.error).to.eql(\"Bad Request\");",
+              "    pm.expect(json.path).to.eql(\"/api/assign\");",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/assign",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "assign"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"requestNumber\": ",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "07 - Asignar: GET no permitido -> 405",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado 405 Method Not Allowed\", function () {",
+              "    pm.response.to.have.status(405);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/assign",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "assign"
+          ]
+        },
+        "description": ""
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "catalogo",
+      "value": ""
+    },
+    {
+      "key": "requestNumber",
+      "value": ""
+    },
+    {
+      "key": "clientName",
+      "value": ""
+    }
+  ]
+}

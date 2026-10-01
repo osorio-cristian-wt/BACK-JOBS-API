@@ -1,22 +1,10 @@
 package com.uap.proiv.jobs.dto;
 
-public class Job {
+public class JobRequest {
     private String name;
     private double salary;
     private int hours;
-    private int id;
     private int resources;
-
-    public Job(String name, double salary, int hours, int id, int resources) {
-        this.name = name;
-        this.salary = salary;
-        this.hours = hours;
-        this.id = id;
-        this.resources = resources;
-    }
-
-    public Job() {
-    }
 
     public String getName() {
         return name;
@@ -40,14 +28,6 @@ public class Job {
 
     public void setHours(int hours) {
         this.hours = hours;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public int getResources() {
