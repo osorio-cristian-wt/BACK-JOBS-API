@@ -82,6 +82,7 @@ public class UserControllerIntegrationTest {
     @Test
     @DisplayName("GET api/users/id/{id} integracion UserController, UserService, UserRepository, mock api externa")
     void getUserById() throws Exception {
+        // Construcción: la API externa simulada devuelve la página 1 con Ana (id 1) y Juan (id 2)
         // Desde la actualización del fork, getUserById() busca en la página 1 de ReqRes
         // (GET /api/users?page=1), por eso el mock devuelve una página y no un usuario suelto.
         String jsonResponse = """
@@ -114,6 +115,7 @@ public class UserControllerIntegrationTest {
                 .addHeader("Content-Type", "application/json")
         );
 
+        // Prueba y verificación: GET /api/user/id/2 responde 200 con los datos de Juan y jobId = 1
         mockMvc.perform(get("/api/user/id/2"))
         .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -124,6 +126,7 @@ public class UserControllerIntegrationTest {
                 .andExpect(jsonPath("$.avatar").value("https://reqres.in/img/faces/2.jpg"))
                 .andExpect(jsonPath("$.jobId").value(1));
 
+        // Verificación: a la API externa le llegó un GET a la página 1 con los headers Accept y X-API-KEY
         RecordedRequest request = mockWebServer.takeRequest(1, TimeUnit.SECONDS);
         assertEquals("GET", request.getMethod());
         assertEquals("/api/users?page=1", request.getPath());
@@ -135,6 +138,7 @@ public class UserControllerIntegrationTest {
     @Test
     @DisplayName(" POST /api/user/update integracion UserController, UserService, UserRepository, mock api externa")
     void updateUser_success() throws Exception {
+        // Construcción: la API externa simulada responde OK al update y se arma el JSON de Carlos Perez con id 1
         String updateResponse = """
                 {
                  "name": "Carlos",
@@ -157,12 +161,14 @@ public class UserControllerIntegrationTest {
                 }
                 """;
 
+        // Prueba y verificación: POST /api/user/update responde 200 con "User created successfully"
         mockMvc.perform(post("/api/user/update")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(userJson))
                 .andExpect(status().isOk())
                 .andExpect(content().string("User created successfully"));
 
+        // Verificación: a la API externa le llegó un PUT a /api/users/1 con la API key y el body con name y job
         RecordedRequest request = mockWebServer.takeRequest(1, TimeUnit.SECONDS);
         assertEquals("PUT", request.getMethod());
         assertEquals("/api/users/1", request.getPath());

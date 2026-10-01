@@ -79,6 +79,7 @@ class AssignControllerTest {
     @Test
     @DisplayName("POST /api/assign retorna cliente, número de pedido y asignaciones")
     void postAssign_success() throws Exception {
+        // Construcción: se arman 2 trabajos y el service falso devuelve sus asignaciones (2 usuarios y 1 usuario)
         Job job1 = new Job("Developer", 5000, 2000, 1, 2);
         Job job2 = new Job("Designer", 4500, 1500, 2, 1);
 
@@ -88,6 +89,7 @@ class AssignControllerTest {
 
         when(userJobAssignedService.assign()).thenReturn(asignaciones);
 
+        // Prueba y verificación: POST /api/assign responde 200 con el cliente, el número de pedido y las 2 asignaciones
         mockMvc.perform(post("/api/assign")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body(123, "Name")))
@@ -102,14 +104,17 @@ class AssignControllerTest {
                 .andExpect(jsonPath("$.Assign[1].job.name").value("Designer"))
                 .andExpect(jsonPath("$.Assign[1].users.length()").value(1));
 
+        // Verificación: el service se llamó una sola vez
         verify(userJobAssignedService, times(1)).assign();
     }
 
     @Test
     @DisplayName("POST /api/assign - Excepción del service retorna 500 con el mensaje")
     void postAssign_exception() throws Exception {
+        // Construcción: el service falso lanza un error al asignar
         when(userJobAssignedService.assign()).thenThrow(new RuntimeException("Service Error"));
 
+        // Prueba y verificación: POST /api/assign responde 500 con el mensaje "Service Error"
         mockMvc.perform(post("/api/assign")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body(123, "Name")))
@@ -120,33 +125,42 @@ class AssignControllerTest {
     @Test
     @DisplayName("POST /api/assign sin clientName retorna 400 y no llama al service")
     void postAssign_sinClientName() throws Exception {
+        // Construcción: no hace falta preparar nada (el body va sin clientName)
+        // Prueba y verificación: POST /api/assign sin clientName responde 400
         mockMvc.perform(post("/api/assign")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body(123, null)))
                 .andExpect(status().isBadRequest());
 
+        // Verificación: el service nunca fue llamado
         verifyNoInteractions(userJobAssignedService);
     }
 
     @Test
     @DisplayName("POST /api/assign con clientName vacío retorna 400")
     void postAssign_clientNameVacio() throws Exception {
+        // Construcción: no hace falta preparar nada (el body va con clientName vacío)
+        // Prueba y verificación: POST /api/assign con clientName vacío responde 400
         mockMvc.perform(post("/api/assign")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body(123, "")))
                 .andExpect(status().isBadRequest());
 
+        // Verificación: el service nunca fue llamado
         verifyNoInteractions(userJobAssignedService);
     }
 
     @Test
     @DisplayName("POST /api/assign sin requestNumber retorna 400")
     void postAssign_sinRequestNumber() throws Exception {
+        // Construcción: no hace falta preparar nada (el body va sin requestNumber)
+        // Prueba y verificación: POST /api/assign sin requestNumber responde 400
         mockMvc.perform(post("/api/assign")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body(null, "Name")))
                 .andExpect(status().isBadRequest());
 
+        // Verificación: el service nunca fue llamado
         verifyNoInteractions(userJobAssignedService);
     }
 }

@@ -96,10 +96,12 @@ class AssignControllerIntegrationTest {
     @Test
     @DisplayName("POST /api/assign integración completa: asigna usuarios a los 7 trabajos de jobs.json")
     void assign_success() throws Exception {
+        // Construcción: se arma el body con el pedido 1001 del cliente UAP (la API externa simulada ya está lista)
         String body = """
                 { "requestNumber": 1001, "clientName": "UAP" }
                 """;
 
+        // Prueba y verificación: POST /api/assign responde 200 con los 7 trabajos y la cantidad de usuarios que pide cada uno
         mockMvc.perform(post("/api/assign")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
@@ -125,6 +127,7 @@ class AssignControllerIntegrationTest {
                 .andExpect(jsonPath("$.Assign[0].users[0].first_name").isString())
                 .andExpect(jsonPath("$.Assign[0].users[0].last_name").isString());
 
+        // Verificación: se pidieron las páginas 1, 2 y 3 a la API externa con los headers correctos y nada más
         // el servicio recorre las páginas 1, 2 y 3 (la 3 viene vacía y corta el ciclo)
         RecordedRequest page1 = mockWebServer.takeRequest(1, TimeUnit.SECONDS);
         RecordedRequest page2 = mockWebServer.takeRequest(1, TimeUnit.SECONDS);
@@ -140,8 +143,10 @@ class AssignControllerIntegrationTest {
     @Test
     @DisplayName("POST /api/assign integración - API externa caída retorna 500 con el error")
     void assign_apiExternaCaida() throws Exception {
+        // Construcción: se marca la API externa simulada como caída (responde 500)
         apiExternaCaida = true;
 
+        // Prueba y verificación: POST /api/assign responde 500 con el mensaje de error de conexión y el código 500
         mockMvc.perform(post("/api/assign")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ \"requestNumber\": 1, \"clientName\": \"UAP\" }"))
@@ -153,17 +158,22 @@ class AssignControllerIntegrationTest {
     @Test
     @DisplayName("POST /api/assign integración - sin clientName retorna 400 y no llama a la API externa")
     void assign_sinClientName() throws Exception {
+        // Construcción: no hace falta preparar nada (el body va sin clientName)
+        // Prueba y verificación: POST /api/assign sin clientName responde 400
         mockMvc.perform(post("/api/assign")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ \"requestNumber\": 1 }"))
                 .andExpect(status().isBadRequest());
 
+        // Verificación: la API externa no recibió ningún pedido
         assertNull(mockWebServer.takeRequest(100, TimeUnit.MILLISECONDS));
     }
 
     @Test
     @DisplayName("POST /api/assign integración - sin requestNumber retorna 400")
     void assign_sinRequestNumber() throws Exception {
+        // Construcción: no hace falta preparar nada (el body va sin requestNumber)
+        // Prueba y verificación: POST /api/assign sin requestNumber responde 400
         mockMvc.perform(post("/api/assign")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ \"clientName\": \"UAP\" }"))
@@ -173,6 +183,8 @@ class AssignControllerIntegrationTest {
     @Test
     @DisplayName("POST /api/assign integración - body con JSON inválido retorna 400")
     void assign_jsonInvalido() throws Exception {
+        // Construcción: no hace falta preparar nada (el body es un JSON mal escrito)
+        // Prueba y verificación: POST /api/assign con JSON inválido responde 400
         mockMvc.perform(post("/api/assign")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ requestNumber: "))

@@ -28,6 +28,8 @@ class JobControllerIntegrationTest {
     @Test
     @DisplayName("GET /api/job/all integración Controller, Service, Repository y jobs.json")
     void getAllJobs_devuelveElCatalogoCompleto() throws Exception {
+        // Construcción: no hace falta preparar nada (se usa el jobs.json real)
+        // Prueba y verificación: GET /api/job/all responde 200 con los 7 trabajos, revisando el primero y el último
         mockMvc.perform(get("/api/job/all"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -46,6 +48,8 @@ class JobControllerIntegrationTest {
     @Test
     @DisplayName("GET /api/job/{id} integración - trabajo existente")
     void getJobById_existente() throws Exception {
+        // Construcción: no hace falta preparar nada (el trabajo 4 existe en jobs.json)
+        // Prueba y verificación: GET /api/job/4 responde 200 con los datos de Backend Engineer
         mockMvc.perform(get("/api/job/4"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -59,6 +63,8 @@ class JobControllerIntegrationTest {
     @Test
     @DisplayName("GET /api/job/{id} integración - id inexistente retorna 500 'No value present'")
     void getJobById_inexistente() throws Exception {
+        // Construcción: no hace falta preparar nada (el id 3 no existe en jobs.json)
+        // Prueba y verificación: GET /api/job/3 responde 500 con el mensaje "No value present"
         mockMvc.perform(get("/api/job/3"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string("No value present"));
@@ -67,6 +73,8 @@ class JobControllerIntegrationTest {
     @Test
     @DisplayName("GET /api/job/{id} integración - id no numérico retorna 400")
     void getJobById_idNoNumerico() throws Exception {
+        // Construcción: no hace falta preparar nada (el id "abc" ya es inválido)
+        // Prueba y verificación: GET /api/job/abc responde 400
         mockMvc.perform(get("/api/job/abc"))
                 .andExpect(status().isBadRequest());
     }

@@ -79,8 +79,10 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /api/user/{page} retorna usuarios")
     void getUsers_success() throws Exception {
+        // Construcción: el service falso devuelve la página 1 con los 2 usuarios
         when(userService.search(1)).thenReturn(userApiResponse);
 
+        // Prueba y verificación: GET /api/user/1 responde 200 con la página 1, 2 usuarios y el primero es juan
         mockMvc.perform(get("/api/user/1"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -94,8 +96,10 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /api/user/{page} - Excepción retornada por el service")
     void getUsers_exception() throws Exception {
+        // Construcción: el service falso lanza un error al pedir la página 2
         when(userService.search(2)).thenThrow(new RuntimeException("Service Error"));
 
+        // Prueba y verificación: GET /api/user/2 responde 500 con el mensaje "Service Error"
         mockMvc.perform(get("/api/user/2"))
                 .andExpect(status().is5xxServerError())
                 .andExpect(content().string("Service Error"));
@@ -104,8 +108,10 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /api/user/id/{id} retorna el usuario")
     void getUserById_success() throws Exception {
+        // Construcción: el service falso devuelve a diane cuando le piden el id 2
         when(userService.searchById(2)).thenReturn(users.get(1));
 
+        // Prueba y verificación: GET /api/user/id/2 responde 200 con los datos de diane
         mockMvc.perform(get("/api/user/id/2"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(2))
@@ -116,8 +122,10 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /api/user/id/{id} - Excepción retornada por el service")
     void getUserById_exception() throws Exception {
+        // Construcción: el service falso lanza un error al buscar el id 5
         when(userService.searchById(5)).thenThrow(new RuntimeException("Service Error"));
 
+        // Prueba y verificación: GET /api/user/id/5 responde 500 con el mensaje "Service Error"
         mockMvc.perform(get("/api/user/id/5"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string("Service Error"));
@@ -126,6 +134,7 @@ class UserControllerTest {
     @Test
     @DisplayName("POST /api/user/update actualiza y envía al service los datos recibidos")
     void update_success() throws Exception {
+        // Construcción: se arma el JSON del usuario con id 1, morpheus / zion resident
         String json = """
                 {
                   "id": 1,
@@ -134,12 +143,14 @@ class UserControllerTest {
                 }
                 """;
 
+        // Prueba y verificación: POST /api/user/update con ese JSON responde 200 con "User created successfully"
         mockMvc.perform(post("/api/user/update")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isOk())
                 .andExpect(content().string("User created successfully"));
 
+        // Verificación: el service recibió un usuario con el id, nombre y apellido enviados
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(userService).update(captor.capture());
         assertEquals(1, captor.getValue().getId());
@@ -150,8 +161,10 @@ class UserControllerTest {
     @Test
     @DisplayName("POST /api/user/update - Excepción retornada por el service")
     void update_exception() throws Exception {
+        // Construcción: el service falso lanza un error 500 al actualizar cualquier usuario
         doThrow(new RuntimeException("Error al crear el usuario: 500")).when(userService).update(any(User.class));
 
+        // Prueba y verificación: POST /api/user/update responde 500 con el mensaje del error
         mockMvc.perform(post("/api/user/update")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"id\": 1, \"first_name\": \"x\", \"last_name\": \"y\"}"))

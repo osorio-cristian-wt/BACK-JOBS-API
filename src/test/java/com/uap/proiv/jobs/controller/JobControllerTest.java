@@ -59,8 +59,10 @@ class JobControllerTest {
     @Test
     @DisplayName("GET /api/job/all retorna todos los trabajos")
     void getAllJobs_success() throws Exception {
+        // Construcción: el service falso devuelve los 2 trabajos (Developer y Designer)
         when(jobService.getAllJobs()).thenReturn(jobs);
 
+        // Prueba y verificación: GET /api/job/all responde 200 con un JSON de 2 trabajos y sus datos
         mockMvc.perform(get("/api/job/all"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -73,14 +75,17 @@ class JobControllerTest {
                 .andExpect(jsonPath("$[0].resources").value(3))
                 .andExpect(jsonPath("$[1].name").value("Designer"));
 
+        // Verificación: el service se llamó una sola vez
         verify(jobService, times(1)).getAllJobs();
     }
 
     @Test
     @DisplayName("GET /api/job/all sin trabajos retorna lista vacía")
     void getAllJobs_listaVacia() throws Exception {
+        // Construcción: el service falso devuelve una lista vacía
         when(jobService.getAllJobs()).thenReturn(List.of());
 
+        // Prueba y verificación: GET /api/job/all responde 200 con un arreglo vacío
         mockMvc.perform(get("/api/job/all"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -90,8 +95,10 @@ class JobControllerTest {
     @Test
     @DisplayName("GET /api/job/all - Excepción del service retorna 500 con el mensaje")
     void getAllJobs_exception() throws Exception {
+        // Construcción: el service falso lanza un error al leer jobs.json
         when(jobService.getAllJobs()).thenThrow(new RuntimeException("Error al leer jobs.json"));
 
+        // Prueba y verificación: GET /api/job/all responde 500 con el mensaje del error
         mockMvc.perform(get("/api/job/all"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string("Error al leer jobs.json"));
@@ -100,8 +107,10 @@ class JobControllerTest {
     @Test
     @DisplayName("GET /api/job/{id} retorna el trabajo solicitado")
     void getJobById_success() throws Exception {
+        // Construcción: el service falso devuelve el trabajo Designer para el id 2
         when(jobService.getJobById(2)).thenReturn(jobs.get(1));
 
+        // Prueba y verificación: GET /api/job/2 responde 200 con los datos de Designer
         mockMvc.perform(get("/api/job/2"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -111,14 +120,17 @@ class JobControllerTest {
                 .andExpect(jsonPath("$.hours").value(1500))
                 .andExpect(jsonPath("$.resources").value(1));
 
+        // Verificación: el service se llamó una sola vez con el id 2
         verify(jobService, times(1)).getJobById(2);
     }
 
     @Test
     @DisplayName("GET /api/job/{id} inexistente - el service lanza NoSuchElementException y retorna 500")
     void getJobById_noExiste() throws Exception {
+        // Construcción: el service falso lanza NoSuchElementException para el id 99
         when(jobService.getJobById(99)).thenThrow(new NoSuchElementException("No value present"));
 
+        // Prueba y verificación: GET /api/job/99 responde 500 con el mensaje "No value present"
         mockMvc.perform(get("/api/job/99"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string("No value present"));
@@ -127,9 +139,12 @@ class JobControllerTest {
     @Test
     @DisplayName("GET /api/job/{id} con id no numérico retorna 400 y no llama al service")
     void getJobById_idInvalido() throws Exception {
+        // Construcción: no hace falta preparar nada (el id "abc" ya es inválido)
+        // Prueba y verificación: GET /api/job/abc responde 400
         mockMvc.perform(get("/api/job/abc"))
                 .andExpect(status().isBadRequest());
 
+        // Verificación: el service nunca fue llamado
         verifyNoInteractions(jobService);
     }
 }
