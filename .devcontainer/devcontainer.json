@@ -1,0 +1,27 @@
+{
+  "name": "BACK-JOBS-API (Java 21 + Maven + Docker)",
+  "image": "mcr.microsoft.com/devcontainers/java:1-21-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "none",
+      "installMaven": "true",
+      "mavenVersion": "3.9"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": { "label": "API", "onAutoForward": "notify" }
+  },
+  "postCreateCommand": "mvn -B -q dependency:go-offline || true",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vmware.vscode-boot-dev-pack",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  },
+  "hostRequirements": { "cpus": 2, "memory": "4gb" }
+}

@@ -1,0 +1,32 @@
+name: Tests backend
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Correr tests en el mismo contenedor que en local
+        run: docker compose run --rm tests
+
+      - name: Publicar reportes de tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
+          if-no-files-found: warn
+
+  docker-image:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir imagen de la API
+        run: docker build --target runtime -t back-jobs-api:ci .
